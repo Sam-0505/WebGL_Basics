@@ -34,7 +34,9 @@ out vec4 frag_color;
 
 void main()
 {
-    frag_color=texture(u_image,texCoords);
+    vec2 pixel=vec2(1.0)/vec2(textureSize(u_image,0));
+    //frag_color=texture(u_image,texCoords);
+    frag_color=(texture(u_image,texCoords)+texture(u_image,texCoords+vec2(pixel.x,0.0))+texture(u_image,texCoords-vec2(pixel.x,0.0)))/3.0;
 }
 `;
 
@@ -90,13 +92,6 @@ function setRectangle(gl,x,y,width,height)
 
 function render(image)
 {
-    var canvas= document.getElementById('c');
-    var gl=canvas.getContext('webgl2');
-    if(!gl)
-    {
-        return;
-    }
-
     //Creating the shaders
     var vert_shader=makeShader(gl,gl.VERTEX_SHADER,vert_code);
     var frag_shader=makeShader(gl,gl.FRAGMENT_SHADER,frag_code);
@@ -111,7 +106,7 @@ function render(image)
     //Adding position coordinates
     var pos_buffer=gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER,pos_buffer);
-    setRectangle(gl,0,0,gl.canvas.width,gl.canvas.height);
+    setRectangle(gl,0,0,image.width,image.height);
     var posLoc=gl.getAttribLocation(program,"a_position");
     gl.enableVertexAttribArray(posLoc);
     gl.vertexAttribPointer(posLoc, 2, gl.FLOAT, false, 0, 0);      
@@ -155,6 +150,7 @@ function render(image)
     gl.clear(gl.COLOR_BUFFER_BIT);
     gl.useProgram(program);
     gl.bindVertexArray(vao);
+    kernal_menu();
 
     //Set the uniforms
     gl.uniform2f(resLoc, gl.canvas.width, gl.canvas.height);
@@ -165,15 +161,138 @@ function render(image)
     gl.drawArrays(gl.TRIANGLES, 0, 6);
 }
 
-function main()
+function kernal_menu()
 {
-    //Creating image
-    var image=new Image();
-    image.src="./textures/airplane.png";
-    image.onload=function()
-    {
-        render(image);
-    }
+    var kernels = {
+        normal: [
+          0, 0, 0,
+          0, 1, 0,
+          0, 0, 0,
+        ],
+        gaussianBlur: [
+          0.045, 0.122, 0.045,
+          0.122, 0.332, 0.122,
+          0.045, 0.122, 0.045,
+        ],
+        gaussianBlur2: [
+          1, 2, 1,
+          2, 4, 2,
+          1, 2, 1,
+        ],
+        gaussianBlur3: [
+          0, 1, 0,
+          1, 1, 1,
+          0, 1, 0,
+        ],
+        unsharpen: [
+          -1, -1, -1,
+          -1,  9, -1,
+          -1, -1, -1,
+        ],
+        sharpness: [
+           0, -1,  0,
+          -1,  5, -1,
+           0, -1,  0,
+        ],
+        sharpen: [
+           -1, -1, -1,
+           -1, 16, -1,
+           -1, -1, -1,
+        ],
+        edgeDetect: [
+           -0.125, -0.125, -0.125,
+           -0.125,  1,     -0.125,
+           -0.125, -0.125, -0.125,
+        ],
+        edgeDetect2: [
+           -1, -1, -1,
+           -1,  8, -1,
+           -1, -1, -1,
+        ],
+        edgeDetect3: [
+           -5, 0, 0,
+            0, 0, 0,
+            0, 0, 5,
+        ],
+        edgeDetect4: [
+           -1, -1, -1,
+            0,  0,  0,
+            1,  1,  1,
+        ],
+        edgeDetect5: [
+           -1, -1, -1,
+            2,  2,  2,
+           -1, -1, -1,
+        ],
+        edgeDetect6: [
+           -5, -5, -5,
+           -5, 39, -5,
+           -5, -5, -5,
+        ],
+        sobelHorizontal: [
+            1,  2,  1,
+            0,  0,  0,
+           -1, -2, -1,
+        ],
+        sobelVertical: [
+            1,  0, -1,
+            2,  0, -2,
+            1,  0, -1,
+        ],
+        previtHorizontal: [
+            1,  1,  1,
+            0,  0,  0,
+           -1, -1, -1,
+        ],
+        previtVertical: [
+            1,  0, -1,
+            1,  0, -1,
+            1,  0, -1,
+        ],
+        boxBlur: [
+            0.111, 0.111, 0.111,
+            0.111, 0.111, 0.111,
+            0.111, 0.111, 0.111,
+        ],
+        triangleBlur: [
+            0.0625, 0.125, 0.0625,
+            0.125,  0.25,  0.125,
+            0.0625, 0.125, 0.0625,
+        ],
+        emboss: [
+           -2, -1,  0,
+           -1,  1,  1,
+            0,  1,  2,
+        ],
+      };
+
+      var initialSelection = 'edgeDetect2';
+      var ui=document.getElementById("ui");
+      var select=document.createElement("select");
+      for(var kernel in kernels)
+      {
+          var option=document.createElement("option");
+          option.value=kernel;
+          if (kernel=== initialSelection)
+            {
+            option.selected = true;
+          }
+          option.appendChild(document.createTextNode(kernel));
+          select.appendChild(option);
+      }
+      ui.appendChild(select);
 }
 
-main();
+//Creating imag
+var canvas= document.getElementById('c');
+var gl=canvas.getContext('webgl2');
+if(gl)
+{
+    console.log("WebGL works");
+}
+var image=new Image();
+image.src="./textures/airplane.png";
+image.onload=function()
+{
+    render(image);
+}
