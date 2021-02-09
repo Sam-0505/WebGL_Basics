@@ -2,11 +2,11 @@
 
 var vert_code=`#version 300 es
 in vec2 a_position;
-//in vec2 a_texCoords;
+in vec2 a_texCoords;
 
 uniform vec2 res;
 
-//out vec2 texCoords;
+out vec2 texCoords;
 
 void main()
 {
@@ -19,20 +19,22 @@ void main()
     //convert them to (-1.0 to 1.0) form
     vec2 clipSpace=zeroTwo-1.0;
     gl_Position = vec4(clipSpace * vec2(1, -1), 0, 1);
-    //texCoords=a_texCoords;
+    texCoords=a_texCoords;
 }
 `;
 
 var frag_code=`#version 300 es
 
 precision highp float;
-//in vec2 texCoords;
+in vec2 texCoords;
+
+uniform sampler2D u_image;
 
 out vec4 frag_color;
 
 void main()
 {
-    frag_color=vec4(1.0,0.6,0.7,1.0);
+    frag_color=texture(u_image,texCoords);
 }
 `;
 
@@ -76,17 +78,17 @@ function setRectangle(gl,x,y,width,height)
     x2=x+width;
     y1=y;
     y2=y+height;
-    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([
         x1,y1,
         x2,y1,
         x1,y2,
         x1,y2,
         x2,y1,
         x2,y2
-    ),gl.STATIC_DRAW);
+    ]),gl.STATIC_DRAW);
 }
 
-function main()
+function render(image)
 {
     var canvas= document.getElementById('c');
     var gl=canvas.getContext('webgl2');
@@ -109,26 +111,13 @@ function main()
     //Adding position coordinates
     var pos_buffer=gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER,pos_buffer);
-    //setRectangle(gl,0,0,gl.canvas.width,gl.canvas.height);
-    var x1,x2,y1,y2;
-    x1=0;
-    x2=0+gl.canvas.width;
-    y1=0;
-    y2=0+gl.canvas.height;
-    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([
-        x1,y1,
-        x2,y1,
-        x1,y2,
-        x1,y2,
-        x2,y1,
-        x2,y2
-    ]),gl.STATIC_DRAW);
+    setRectangle(gl,0,0,gl.canvas.width,gl.canvas.height);
     var posLoc=gl.getAttribLocation(program,"a_position");
     gl.enableVertexAttribArray(posLoc);
     gl.vertexAttribPointer(posLoc, 2, gl.FLOAT, false, 0, 0);      
 
     //Adding texture coordinates
-    /*var texCoords=[
+    var texCoords=[
         0.0,0.0,
         1.0,0.0,
         0.0,1.0,
@@ -141,10 +130,25 @@ function main()
     gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(texCoords),gl.STATIC_DRAW);
     var texLoc=gl.getAttribLocation(program,"a_texCoords");
     gl.enableVertexAttribArray(texLoc);
-    gl.vertexAttribPointer(texLoc, 2, gl.FLOAT, false, 0, 0);*/
+    gl.vertexAttribPointer(texLoc, 2, gl.FLOAT, false, 0, 0);
 
-    //Set uniforms
+    //Setting the texture
+    var texture=gl.createTexture();
+    gl.activeTexture(gl.TEXTURE0 + 0);//make unit 0 the active texture unit
+    gl.bindTexture(gl.TEXTURE_2D, texture);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+    var mipLevel = 0;               // the largest mip
+    var internalFormat = gl.RGBA;   // format we want in the texture
+    var srcFormat = gl.RGBA;        // format of data we are supplying
+    var srcType = gl.UNSIGNED_BYTE; // type of data we are supplying
+    gl.texImage2D(gl.TEXTURE_2D,mipLevel,internalFormat,srcFormat,srcType,image);
+
+    //Get uniform locations
     var resLoc=gl.getUniformLocation(program, "res");
+    var texLoc=gl.getUniformLocation(program,"u_image");
     
     gl.viewport(0,0,gl.canvas.width,gl.canvas.height);
     gl.clearColor(0.0,0.5,0.8,1.0);
@@ -154,11 +158,22 @@ function main()
 
     //Set the uniforms
     gl.uniform2f(resLoc, gl.canvas.width, gl.canvas.height);
-    
-    
+    gl.uniform1i(texLoc,0);
+        
     //Draw the triangle
     gl.enable(gl.DEPTH_TEST);
     gl.drawArrays(gl.TRIANGLES, 0, 6);
+}
+
+function main()
+{
+    //Creating image
+    var image=new Image();
+    image.src="./textures/airplane.png";
+    image.onload=function()
+    {
+        render(image);
+    }
 }
 
 main();
