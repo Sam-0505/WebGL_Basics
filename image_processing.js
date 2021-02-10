@@ -30,14 +30,36 @@ in vec2 texCoords;
 
 uniform sampler2D u_image;
 uniform float u_kernel[9];
+uniform float u_kernelWeight;
 
 out vec4 frag_color;
 
 void main()
 {
-    vec2 pixel=vec2(1.0)/vec2(textureSize(u_image,0));
+   /* vec2 pixel=vec2(1.0)/vec2(textureSize(u_image,0));
     //frag_color=texture(u_image,texCoords);
-    frag_color=(texture(u_image,texCoords)+texture(u_image,texCoords+vec2(pixel.x,0.0))+texture(u_image,texCoords-vec2(pixel.x,0.0)))/3.0;
+    vec4 colorSum=texture(u_image,texCoords+pixel*vec2(-1,-1))*u_kernel[0]+
+    texture(u_image,texCoords+pixel*vec2(0,-1))*u_kernel[1]+
+    texture(u_image,texCoords+pixel*vec2(1,-1))*u_kernel[2]+
+    texture(u_image,texCoords+pixel*vec2(-1,0))*u_kernel[3]+
+    texture(u_image,texCoords+pixel*vec2(0,0))*u_kernel[4]+
+    texture(u_image,texCoords+pixel*vec2(1,0))*u_kernel[5]+
+    texture(u_image,texCoords+pixel*vec2(-1,1))*u_kernel[6]+
+    texture(u_image,texCoords+pixel*vec2(0,1))*u_kernel[7]+
+    texture(u_image,texCoords+pixel*vec2(1,1))*u_kernel[8]; 
+
+    frag_color=vec4((colorSum/u_kernelWeight).rgb,1);*/
+    vec2 onePixel = vec2(1) / vec2(textureSize(u_image, 0));
+    vec4 colorSum =texture(u_image, texCoords + onePixel * vec2(-1, -1)) * u_kernel[0] +
+    texture(u_image, texCoords + onePixel * vec2( 0, -1)) * u_kernel[1] +
+    texture(u_image, texCoords + onePixel * vec2( 1, -1)) * u_kernel[2] +
+    texture(u_image, texCoords + onePixel * vec2(-1,  0)) * u_kernel[3] +
+    texture(u_image, texCoords + onePixel * vec2( 0,  0)) * u_kernel[4] +
+    texture(u_image, texCoords + onePixel * vec2( 1,  0)) * u_kernel[5] +
+    texture(u_image, texCoords + onePixel * vec2(-1,  1)) * u_kernel[6] +
+    texture(u_image, texCoords + onePixel * vec2( 0,  1)) * u_kernel[7] +
+    texture(u_image, texCoords + onePixel * vec2( 1,  1)) * u_kernel[8] ;
+    frag_color = vec4((colorSum / u_kernelWeight).rgb, 1);
 }
 `;
 
@@ -146,7 +168,8 @@ function render(image)
     var resLoc=gl.getUniformLocation(program, "res");
     var texLoc=gl.getUniformLocation(program,"u_image");
     var kernelLoc=gl.getUniformLocation(program,"u_kernel[0]");
-    
+    var kernelWeightLoc=gl.getUniformLocation(program,"u_kernelWeight");
+
     gl.viewport(0,0,gl.canvas.width,gl.canvas.height);
     gl.clearColor(0.0,0.5,0.8,1.0);
     gl.clear(gl.COLOR_BUFFER_BIT);
@@ -287,9 +310,12 @@ function render(image)
         {
             console.log(kernel[i]);
         }
+        var kernelWeight=computeWeight(kernel);
         //Set the uniforms
         gl.uniform2f(resLoc, gl.canvas.width, gl.canvas.height);
         gl.uniform1i(texLoc,0);
+        gl.uniform1fv(kernelLoc, kernel);
+        gl.uniform1f(kernelWeightLoc, kernelWeight);
         
         //Draw the triangle
         gl.enable(gl.DEPTH_TEST);
@@ -297,7 +323,7 @@ function render(image)
     }
 }
 
-//Creating imag
+//Creating image
 var canvas= document.getElementById('c');
 var gl=canvas.getContext('webgl2');
 if(gl)
@@ -309,4 +335,17 @@ image.src="./textures/airplane.png";
 image.onload=function()
 {
     render(image);
+}
+
+function computeWeight(mat)
+{
+    var sum=0;
+    for(var int in mat)
+    {
+        sum+=mat[int];
+    }
+    if(sum>0)
+        return sum;
+    else
+        return 1.0;
 }
