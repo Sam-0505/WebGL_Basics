@@ -29,6 +29,7 @@ precision highp float;
 in vec2 texCoords;
 
 uniform sampler2D u_image;
+uniform float u_kernel[9];
 
 out vec4 frag_color;
 
@@ -144,25 +145,16 @@ function render(image)
     //Get uniform locations
     var resLoc=gl.getUniformLocation(program, "res");
     var texLoc=gl.getUniformLocation(program,"u_image");
+    var kernelLoc=gl.getUniformLocation(program,"u_kernel[0]");
     
     gl.viewport(0,0,gl.canvas.width,gl.canvas.height);
     gl.clearColor(0.0,0.5,0.8,1.0);
     gl.clear(gl.COLOR_BUFFER_BIT);
     gl.useProgram(program);
     gl.bindVertexArray(vao);
-    kernal_menu();
-
-    //Set the uniforms
-    gl.uniform2f(resLoc, gl.canvas.width, gl.canvas.height);
-    gl.uniform1i(texLoc,0);
-        
-    //Draw the triangle
-    gl.enable(gl.DEPTH_TEST);
-    gl.drawArrays(gl.TRIANGLES, 0, 6);
-}
-
-function kernal_menu()
-{
+    kernel_menu();
+    function kernel_menu()
+    {
     var kernels = {
         normal: [
           0, 0, 0,
@@ -267,6 +259,7 @@ function kernal_menu()
       };
 
       var initialSelection = 'edgeDetect2';
+      var selection=initialSelection;
       var ui=document.getElementById("ui");
       var select=document.createElement("select");
       for(var kernel in kernels)
@@ -280,7 +273,28 @@ function kernal_menu()
           option.appendChild(document.createTextNode(kernel));
           select.appendChild(option);
       }
+      select.onchange=function(){
+          selection=this.options[this.selectedIndex].value;
+          drawImage(kernels[selection]);
+      }
+      drawImage(kernels[initialSelection]);
       ui.appendChild(select);
+    }
+
+    function drawImage(kernel)
+    {
+        for(var i=0;i<9;i++)
+        {
+            console.log(kernel[i]);
+        }
+        //Set the uniforms
+        gl.uniform2f(resLoc, gl.canvas.width, gl.canvas.height);
+        gl.uniform1i(texLoc,0);
+        
+        //Draw the triangle
+        gl.enable(gl.DEPTH_TEST);
+        gl.drawArrays(gl.TRIANGLES, 0, 6);
+    }
 }
 
 //Creating imag
