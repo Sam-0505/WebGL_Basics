@@ -131,7 +131,7 @@ function render(video)
     //Adding position coordinates
     var pos_buffer=gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER,pos_buffer);
-    setRectangle(gl,0,0,image.width,image.height);
+    setRectangle(gl,0,0,canvas.width,canvas.height);
     var posLoc=gl.getAttribLocation(program,"a_position");
     gl.enableVertexAttribArray(posLoc);
     gl.vertexAttribPointer(posLoc, 2, gl.FLOAT, false, 0, 0);      
@@ -166,20 +166,7 @@ function render(video)
     var srcType = gl.UNSIGNED_BYTE; // type of data we are supplying
     var filler=new Uint8Array([255,0,0,1]);
     gl.texImage2D(gl.TEXTURE_2D,mipLevel,internalFormat,srcFormat,srcType,video);
-    
-    /*const level = 0;
-    const internalFormat = gl.RGBA;
-    const width = 1;
-    const height = 1;
-    const border = 0;
-    const srcFormat = gl.RGBA;
-    const srcType = gl.UNSIGNED_BYTE;
-    const pixel = new Uint8Array([0, 0, 255, 255]);  // opaque blue
-    gl.texImage2D(gl.TEXTURE_2D, level, internalFormat,
-                  width, height, border, srcFormat, srcType,
-                  pixel);*/
 
-    //Get uniform locations
     var resLoc=gl.getUniformLocation(program, "res");
     var texLoc=gl.getUniformLocation(program,"u_image");
     var kernelLoc=gl.getUniformLocation(program,"u_kernel[0]");
@@ -322,6 +309,7 @@ function render(video)
       ui.appendChild(select);
     }
 
+    //This is  recursive function to update the frame and draw it
     function control()
     {
         console.log("Its called");
@@ -336,6 +324,7 @@ function render(video)
         drawImage();
         window.requestAnimationFrame(control);
     }
+    //This function draws the image/frame 
     function drawImage()
     {
         var kernelWeight=computeWeight(kernel);
@@ -352,6 +341,7 @@ function render(video)
     }
 }
 
+//To calculate the sum of elements of the kernel matrix
 function computeWeight(mat)
 {
     var sum=0;
