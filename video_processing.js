@@ -113,8 +113,9 @@ function setRectangle(gl,x,y,width,height)
     ]),gl.STATIC_DRAW);
 }
 
-function render(image)
+function render(video)
 {
+    console.log("Render is called")
     //Creating the shaders
     var vert_shader=makeShader(gl,gl.VERTEX_SHADER,vert_code);
     var frag_shader=makeShader(gl,gl.FRAGMENT_SHADER,frag_code);
@@ -162,7 +163,20 @@ function render(image)
     var internalFormat = gl.RGBA;   // format we want in the texture
     var srcFormat = gl.RGBA;        // format of data we are supplying
     var srcType = gl.UNSIGNED_BYTE; // type of data we are supplying
-    gl.texImage2D(gl.TEXTURE_2D,mipLevel,internalFormat,srcFormat,srcType,image);
+    var filler=new Uint8Array([255,0,0,1]);
+    gl.texImage2D(gl.TEXTURE_2D,mipLevel,internalFormat,srcFormat,srcType,video);
+    
+    /*const level = 0;
+    const internalFormat = gl.RGBA;
+    const width = 1;
+    const height = 1;
+    const border = 0;
+    const srcFormat = gl.RGBA;
+    const srcType = gl.UNSIGNED_BYTE;
+    const pixel = new Uint8Array([0, 0, 255, 255]);  // opaque blue
+    gl.texImage2D(gl.TEXTURE_2D, level, internalFormat,
+                  width, height, border, srcFormat, srcType,
+                  pixel);*/
 
     //Get uniform locations
     var resLoc=gl.getUniformLocation(program, "res");
@@ -298,19 +312,23 @@ function render(image)
       }
       select.onchange=function(){
           selection=this.options[this.selectedIndex].value;
-          drawImage(kernels[selection]);
+          control(kernels[selection]);
       }
-      drawImage(kernels[initialSelection]);
+      control(kernels[initialSelection]);
       ui.appendChild(select);
     }
 
+    function control(kernel)
+    {
+        console.log("Its called");
+        updateTexture(texture,video);
+        drawImage(kernel);
+        window.requestAnimationFrame(control);
+    }
     function drawImage(kernel)
     {
-        for(var i=0;i<9;i++)
-        {
-            console.log(kernel[i]);
-        }
         var kernelWeight=computeWeight(kernel);
+
         //Set the uniforms
         gl.uniform2f(resLoc, gl.canvas.width, gl.canvas.height);
         gl.uniform1i(texLoc,0);
@@ -321,22 +339,6 @@ function render(image)
         gl.enable(gl.DEPTH_TEST);
         gl.drawArrays(gl.TRIANGLES, 0, 6);
     }
-}
-
-//Creating image
-var canvas= document.getElementById('c');
-var gl=canvas.getContext('webgl2');
-if(gl)
-{
-    console.log("WebGL works");
-}
-var image=new Image();
-//image.src="./textures/airplane.png";
-var extra=document.getElementById("texture");
-image.src=extra.src;
-image.onload=function()
-{
-    render(image);
 }
 
 function computeWeight(mat)
@@ -351,3 +353,78 @@ function computeWeight(mat)
     else
         return 1.0;
 }
+function setupVideo()
+{
+
+    var playing =false;
+    var timeUpdate=false;
+    video.src=document.getElementById("videoTex").src;
+    video.autoplay=true;
+    video.muted=true;
+
+    video.addEventListener('playing',setPlaying,true);
+    video.addEventListener('timeUpdate',setTimeUpdate,true);
+    
+    function setPlaying()
+    {
+        console.log("setPlaying is done");
+        playing=true;
+        checkReady();
+    }
+    function setTimeUpdate()
+    {
+        console.log("timeUpdate is done");
+        timeUpdate=true;
+        checkReady();
+    }
+
+    video.src=document.getElementById("videoTex").src;
+    video.play();
+
+    function checkReady()
+    {
+        if((playing==true) || (timeUpdate==true))
+        {
+            console.log("checkReady is done");
+            videoReady=true;
+            render(video);
+        }
+    }
+}
+
+function updateTexture(texture, video) 
+{
+    const level = 0;
+    const internalFormat = gl.RGBA;
+    const srcFormat = gl.RGBA;
+    const srcType = gl.UNSIGNED_BYTE;
+    gl.bindTexture(gl.TEXTURE_2D, texture);
+    gl.texImage2D(gl.TEXTURE_2D, level, internalFormat,
+                  srcFormat, srcType, video);
+  }
+
+  //Creating image
+var canvas= document.getElementById('c');
+var gl=canvas.getContext('webgl2');
+if(gl)
+{
+    console.log("WebGL works");
+}
+var image=new Image();
+//image.src="./textures/airplane.png";
+var extra=document.getElementById("texture");
+image.src=extra.src;
+console.log(image.src);
+image.onload=function()
+{
+    //render(image);
+}
+
+var videoReady=false;
+var video=document.createElement("video");
+setupVideo();
+document.getElementById("clickBody").addEventListener('click', function() 
+{
+    video.muted = !video.muted;
+});
+
