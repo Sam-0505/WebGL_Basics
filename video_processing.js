@@ -119,6 +119,7 @@ function render(video)
     //Creating the shaders
     var vert_shader=makeShader(gl,gl.VERTEX_SHADER,vert_code);
     var frag_shader=makeShader(gl,gl.FRAGMENT_SHADER,frag_code);
+    var kernel=[1,0,0,0,1,1,0,0,0];
 
     //Creating the shader program
     var program=makeProgram(gl,vert_shader,frag_shader);
@@ -299,33 +300,43 @@ function render(video)
       var selection=initialSelection;
       var ui=document.getElementById("ui");
       var select=document.createElement("select");
-      for(var kernel in kernels)
+      for(var mat in kernels)
       {
           var option=document.createElement("option");
-          option.value=kernel;
-          if (kernel=== initialSelection)
+          option.value=mat;
+          if (mat=== initialSelection)
             {
             option.selected = true;
-          }
-          option.appendChild(document.createTextNode(kernel));
+            }
+          option.appendChild(document.createTextNode(mat));
           select.appendChild(option);
       }
       select.onchange=function(){
+          console.log("selection changed");
           selection=this.options[this.selectedIndex].value;
-          control(kernels[selection]);
+          console.log(kernels[selection]);
+          kernel=kernels[selection];
       }
-      control(kernels[initialSelection]);
+      kernel=kernels[initialSelection];
+      control();
       ui.appendChild(select);
     }
 
-    function control(kernel)
+    function control()
     {
         console.log("Its called");
-        updateTexture(texture,video);
-        drawImage(kernel);
+        if(videoReady)
+        {
+            updateTexture(texture,video);
+        }
+        if(video.ended)
+        {
+            console.log("Video ended");
+        }
+        drawImage();
         window.requestAnimationFrame(control);
     }
-    function drawImage(kernel)
+    function drawImage()
     {
         var kernelWeight=computeWeight(kernel);
 
