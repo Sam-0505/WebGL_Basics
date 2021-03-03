@@ -128,7 +128,7 @@ function render(video)
     var vao=gl.createVertexArray();
     gl.bindVertexArray(vao);
 
-    //Adding position coordinates
+    //Set the position attribute
     var pos_buffer=gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER,pos_buffer);
     setRectangle(gl,0,0,canvas.width,canvas.height);
@@ -283,7 +283,7 @@ function render(video)
         ],
       };
 
-      var initialSelection = 'edgeDetect2';
+      var initialSelection = 'normal';
       var selection=initialSelection;
       var ui=document.getElementById("ui");
       var select=document.createElement("select");
@@ -411,16 +411,6 @@ if(gl)
 {
     console.log("WebGL works");
 }
-var image=new Image();
-//image.src="./textures/airplane.png";
-var extra=document.getElementById("texture");
-image.src=extra.src;
-console.log(image.src);
-image.onload=function()
-{
-    //render(image);
-}
-
 var videoReady=false;
 var video=document.createElement("video");
 setupVideo();
