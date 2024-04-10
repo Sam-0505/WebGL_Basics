@@ -1,2 +1,3 @@
-# WebGL_Basics
-I have started learning WebGL. This is a practice folder where I make small applications to learn WebGL.
+# WebGL MEDIA FILTERS
+
+Using different convolution matrices to apply image filters on image/video using WebGL and GLSL shaders.
